@@ -1,0 +1,6 @@
+﻿  pch.cpp
+  CLib.cpp
+  dllmain.cpp
+  Generating Code...
+     Creating library C:\Users\radoslawrajda\Desktop\JA_PROJEKT\JAproj\x64\Debug\CLib.lib and object C:\Users\radoslawrajda\Desktop\JA_PROJEKT\JAproj\x64\Debug\CLib.exp
+  CLib.vcxproj -> C:\Users\radoslawrajda\Desktop\JA_PROJEKT\JAproj\x64\Debug\CLib.dll

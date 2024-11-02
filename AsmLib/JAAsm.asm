@@ -1,52 +1,73 @@
-; AsmLib.asm
-.686
-.model flat, stdcall
-option casemap :none
-
-public ProcessImage
+.data
+    ; Zdefiniowanie kolorów do przeliczania skali szaroœci
+    red_coeff   REAL4 0.299
+    green_coeff REAL4 0.587
+    blue_coeff  REAL4 0.114
 
 .code
+; Parametry wejœciowe:
+; - rcx: wskaŸnik na dane bitmapy
+; - rdx: szerokoœæ obrazu
+; - r8 : wysokoœæ obrazu
+; - r9 : odstêp miêdzy wierszami (stride)
+toGrayscale proc
+    push rsi              ; Zachowanie rejestrów u¿ywanych w funkcji
+    push rbx
 
-ProcessImage PROC
-    ; Parametry bêd¹ przekazywane na stosie
-    ; image: DWORD, result: DWORD, width: DWORD, height: DWORD
-    push ebp
-    mov ebp, esp           ; Ustawienie ramki stosu
-    mov eax, [ebp + 8]     ; Za³aduj wskaŸnik do obrazu (image)
-    mov ebx, [ebp + 12]    ; Za³aduj wskaŸnik do wyniku (result)
-    mov ecx, [ebp + 16]    ; Za³aduj szerokoœæ (width)
-    mov edx, [ebp + 20]    ; Za³aduj wysokoœæ (height)
+    mov rsi, rcx          ; rsi = wskaŸnik na dane bitmapy
 
-    xor edi, edi           ; Zmienna do iteracji przez wysokoœæ (y)
-outer_loop:
-    cmp edi, edx           ; SprawdŸ, czy osi¹gniêto wysokoœæ
-    jge end_process        ; Jeœli tak, zakoñcz proces
+    xor rcx, rcx          ; rcx = y (licznik wierszy)
+y_loop:
+    cmp rcx, r8           ; jeœli y >= wysokoœæ, zakoñcz pêtlê
+    jge end_y_loop
 
-    xor ebp, ebp           ; Zmienna do iteracji przez szerokoœæ (x)
-inner_loop:
-    cmp ebp, ecx           ; SprawdŸ, czy osi¹gniêto szerokoœæ
-    jge next_row           ; Jeœli tak, przejdŸ do nastêpnego wiersza
+    xor rbx, rbx          ; rbx = x (licznik kolumn)
+x_loop:
+    cmp rbx, rdx          ; jeœli x >= szerokoœæ, zakoñcz pêtlê
+    jge end_x_loop
 
-    ; Oblicz index piksela
-    ; imagePointer = image + (y * width + x)
-    mov esi, edi           ; Ustaw ESI na aktualny wiersz (y)
-    imul esi, ecx          ; ESI = y * width
-    add esi, ebp           ; ESI = y * width + x
+    ; Obliczenie indeksu piksela: pixelIndex = y * stride + x * 3 (3 bajty na piksel)
+    mov rax, rcx
+    imul rax, r9          ; rax = y * stride
+    add rax, rbx          ; rax = pixelIndex = y * stride + x
+    imul rax, 3           ; przelicz piksel na indeks w tablicy (3 bajty na piksel)
 
-    ; Skopiuj wartoœæ piksela
-    mov al, [eax + esi]    ; Za³aduj piksel (R=G=B dla grayscale)
-    mov [ebx + esi], al    ; Zapisz do tablicy wynikowej
+    ; Pobieranie wartoœci kana³ów RGB
+    movzx eax, byte ptr [rsi + rax]      ; za³aduj wartoœæ kana³u czerwonego do eax
+    cvtsi2ss xmm0, eax                   ; konwersja int do float
+    mulss xmm0, dword ptr [red_coeff]    ; czerwony * wspó³czynnik
 
-    inc ebp                ; Zwiêksz zmienn¹ wewnêtrzn¹ (x)
-    jmp inner_loop         ; Kontynuuj wewnêtrzn¹ pêtlê
+    movzx eax, byte ptr [rsi + rax + 1]  ; za³aduj wartoœæ kana³u zielonego
+    cvtsi2ss xmm1, eax
+    mulss xmm1, dword ptr [green_coeff]  ; zielony * wspó³czynnik
 
-next_row:
-    inc edi                ; Zwiêksz zmienn¹ zewnêtrzn¹ (y)
-    jmp outer_loop         ; Kontynuuj zewnêtrzn¹ pêtlê
+    movzx eax, byte ptr [rsi + rax + 2]  ; za³aduj wartoœæ kana³u niebieskiego
+    cvtsi2ss xmm2, eax
+    mulss xmm2, dword ptr [blue_coeff]   ; niebieski * wspó³czynnik
 
-end_process:
-    pop ebp
+    ; Oblicz sumê wartoœci (konwersja na skalê szaroœci)
+    addss xmm0, xmm1                     ; czerwony + zielony
+    addss xmm0, xmm2                     ; + niebieski
+
+    ; Konwersja wartoœci na int i zapisanie wartoœci do bitmapy (wszystkie kana³y RGB = szaroœæ)
+    cvttss2si eax, xmm0
+    mov byte ptr [rsi + rax], al         ; zapisanie wartoœci szaroœci dla czerwonego
+    mov byte ptr [rsi + rax + 1], al     ; zapisanie wartoœci szaroœci dla zielonego
+    mov byte ptr [rsi + rax + 2], al     ; zapisanie wartoœci szaroœci dla niebieskiego
+
+    ; Nastêpny piksel
+    inc rbx
+    jmp x_loop
+
+end_x_loop:
+    ; Nastêpny wiersz
+    inc rcx
+    jmp y_loop
+
+end_y_loop:
+    pop rbx
+    pop rsi
     ret
-ProcessImage ENDP
+toGrayscale endp
 
 end

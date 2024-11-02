@@ -12,5 +12,5 @@
 
 
 extern "C" {
-    CLIB_API void ProcessImage(unsigned char* image, unsigned char* result, int width, int height, int numThreads);
+    
 }

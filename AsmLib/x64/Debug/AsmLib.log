@@ -1,0 +1,5 @@
+﻿  Assembling JAAsm.asm...
+  pch.cpp
+  dllmain.cpp
+     Creating library C:\Users\radoslawrajda\Desktop\JA_PROJEKT\JAproj\x64\Debug\AsmLib.lib and object C:\Users\radoslawrajda\Desktop\JA_PROJEKT\JAproj\x64\Debug\AsmLib.exp
+  AsmLib.vcxproj -> C:\Users\radoslawrajda\Desktop\JA_PROJEKT\JAproj\x64\Debug\AsmLib.dll
