@@ -11,8 +11,8 @@ namespace Edge_detection
         [DllImport(@"..\..\..\JAproj\x64\Debug\CLib.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "ProcessImageCpp")]
         public static extern void ProcessImageCpp(IntPtr bmpPtr, int width, int height, int numThreads);
 
-        [DllImport(@"..\..\..\JAproj\x64\Debug\AsmLib.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "toGrayscale")]
-        public static extern void toGrayscale(IntPtr bmpPtr, int width, int height, int stride);
+        [DllImport(@"..\..\..\JAproj\x64\Debug\AsmLib.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "ProcessImageAsm")]
+        public static extern void ProcessImageAsm(IntPtr bmpPtr, int width, int height);
 
         private bool useAssembly = false;
 
@@ -45,7 +45,7 @@ namespace Edge_detection
                 // Wybór funkcji w zależności od wartości useAssembly
                 if (useAssembly)
                 {
-                    toGrayscale(bmpData.Scan0, originalBitmap.Width, originalBitmap.Height, stride);
+                    ProcessImageAsm(bmpData.Scan0, originalBitmap.Width, originalBitmap.Height);
                 }
                 else
                 {
