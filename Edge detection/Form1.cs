@@ -12,7 +12,7 @@ namespace Edge_detection
         public static extern void ProcessImageCpp(IntPtr bmpPtr, int width, int height, int numThreads);
 
         [DllImport(@"..\..\..\JAproj\x64\Debug\AsmLib.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "ProcessImageAsm")]
-        public static extern void ProcessImageAsm(IntPtr bmpPtr, int width, int height);
+        public static extern void ProcessImageAsm(IntPtr bmpPtr, int width, int height, int stride);
 
         private bool useAssembly = false;
 
@@ -38,19 +38,25 @@ namespace Edge_detection
             try
             {
                 Rectangle rect = new Rectangle(0, 0, originalBitmap.Width, originalBitmap.Height);
-                BitmapData bmpData = originalBitmap.LockBits(rect, ImageLockMode.ReadWrite, originalBitmap.PixelFormat);
+                BitmapData bmpData = originalBitmap.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
 
                 int stride = bmpData.Stride;
 
                 // Wybór funkcji w zależności od wartości useAssembly
                 if (useAssembly)
                 {
-                    ProcessImageAsm(bmpData.Scan0, originalBitmap.Width, originalBitmap.Height);
+                    ProcessImageAsm(bmpData.Scan0, originalBitmap.Width, originalBitmap.Height, stride);
+
                 }
                 else
                 {
                     ProcessImageCpp(bmpData.Scan0, originalBitmap.Width, originalBitmap.Height, numThreads);
                 }
+
+                
+
+                IntPtr firstPixelPtr = bmpData.Scan0;
+                byte firstPixelValue = Marshal.ReadByte(firstPixelPtr);
 
                 originalBitmap.UnlockBits(bmpData);
 

@@ -1,6 +1,3 @@
-﻿  pch.cpp
-  CLib.cpp
-  dllmain.cpp
-  Generating Code...
+﻿  LINK : C:\Users\radoslawrajda\Desktop\JA_PROJEKT\JAproj\x64\Debug\CLib.dll not found or not built by the last incremental link; performing full link
      Creating library C:\Users\radoslawrajda\Desktop\JA_PROJEKT\JAproj\x64\Debug\CLib.lib and object C:\Users\radoslawrajda\Desktop\JA_PROJEKT\JAproj\x64\Debug\CLib.exp
   CLib.vcxproj -> C:\Users\radoslawrajda\Desktop\JA_PROJEKT\JAproj\x64\Debug\CLib.dll
