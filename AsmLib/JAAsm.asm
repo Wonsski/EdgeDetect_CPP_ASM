@@ -33,11 +33,22 @@ loop_cols:
     imul r13, r13, 4         ; r13 = r13 * 4 (rozmiar piksela)
     add r13, r11             ; r13 = r11 + r13 (wskaŸnik do bie¿¹cego piksela)
 
-    ; Zmiana wartoœci piksela (Ustawianie wartoœci 30, 60, 255, 255)
-    mov byte ptr [r13], 30   ; Ustaw wartoœæ dla kana³u B
-    mov byte ptr [r13+1], 60 ; Ustaw wartoœæ dla kana³u G
-    mov byte ptr [r13+2], 255; Ustaw wartoœæ dla kana³u R
-    mov byte ptr [r13+3], 255; Ustaw wartoœæ dla kana³u A (nieprzezroczysty)
+    movzx eax, byte ptr [r13]        ; Wczytaj kana³ B do eax
+    imul eax, 29                     ; Przemnó¿ kana³ B przez 29
+    movzx ebx, byte ptr [r13+1]      ; Wczytaj kana³ G do ebx
+    imul ebx, 150                    ; Przemnó¿ kana³ G przez 150
+    add eax, ebx                     ; Dodaj wynik do eax
+    movzx ebx, byte ptr [r13+2]      ; Wczytaj kana³ R do ebx
+    imul ebx, 77                     ; Przemnó¿ kana³ R przez 77
+    add eax, ebx                     ; Dodaj wynik do eax
+    shr eax, 8                       ; Podziel przez 256, aby uzyskaæ koñcowy wynik w skali szaroœci
+
+   ; Zapisz wynik w skali szaroœci do wszystkich kana³ów koloru (B, G, R) - efekt szaroœci
+    mov byte ptr [r13], al           ; Ustaw wartoœæ kana³u B na wartoœæ szaroœci
+    mov byte ptr [r13+1], al         ; Ustaw wartoœæ kana³u G na wartoœæ szaroœci
+    mov byte ptr [r13+2], al         ; Ustaw wartoœæ kana³u R na wartoœæ szaroœci
+
+    mov byte ptr [r13+3], 255        ; Kana³ A (nieprzezroczysty)
 
     inc r12                  ; Zwiêksz licznik kolumn
     jmp loop_cols            ; PrzejdŸ do kolejnej kolumny
