@@ -14,6 +14,9 @@ namespace Edge_detection
         [DllImport(@"..\..\..\JAproj\x64\Debug\AsmLib.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "ProcessImageAsm")]
         public static extern void ProcessImageAsm(IntPtr bmpPtr, int width, int height, int stride);
 
+        [DllImport(@"..\..\..\JAproj\x64\Debug\AsmLib.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "DilateImageAsm")]
+        public static extern void DilateImageAsm(IntPtr bmpPtr, int width, int height, int stride);
+
         private bool useAssembly = false;
 
         public Form1()
@@ -45,7 +48,8 @@ namespace Edge_detection
                 // Wybór funkcji w zależności od wartości useAssembly
                 if (useAssembly)
                 {
-                    ProcessImageAsm(bmpData.Scan0, originalBitmap.Width, originalBitmap.Height, stride);
+                    //ProcessImageAsm(bmpData.Scan0, originalBitmap.Width, originalBitmap.Height, stride);
+                    DilateImageAsm(bmpData.Scan0, originalBitmap.Width, originalBitmap.Height, stride);
 
                 }
                 else
