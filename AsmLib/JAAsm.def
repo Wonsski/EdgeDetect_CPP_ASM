@@ -2,3 +2,4 @@ LIBRARY AsmLib
 EXPORTS
 ProcessImageAsm
 DilateImageAsm
+CombineImages

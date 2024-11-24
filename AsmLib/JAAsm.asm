@@ -88,7 +88,7 @@ loop_cols:
     jge end_row              ; Jeœli tak, koñczymy pêtlê wiersza
 
     ; Inicjalizacja maksymalnej wartoœci dla komponentów B, G, R
-    ;mov rax, 0               ; rax przechowuje maksymaln¹ wartoœæ (0)
+    mov rax, 0               ; rax przechowuje maksymaln¹ wartoœæ (0)
 
     ; Obliczanie wskaŸnika do pikseli w danej kolumnie w bie¿¹cym wierszu
     mov r13, r12             ; r13 = r12 (licznik kolumn)
@@ -299,5 +299,100 @@ end_row:
 end_color:
     ret
 DilateImageAsm ENDP
+
+
+CombineImages PROC
+
+    ; RCX: dilatedImageData
+    ; RDX: width
+    ; R8:  height
+    ; R9:  grayscaleImageData (wynik operacji zostanie zapisany tutaj)
+
+    xor r10, r10             ; r10 = 0 (licznik wierszy)
+
+loop_rows:
+    cmp r10, r8              ; Czy r10 (licznik wierszy) >= height?
+    jge end_color            ; Jeœli tak, koñczymy pêtlê
+
+    ; Obliczanie wskaŸnika do pierwszego piksela w danym wierszu
+    mov r11, r10             ; r11 = r10 (licznik wierszy)
+    imul r11, rdx
+    imul r11, 4              ; r11 = r10 * stride (przesuniêcie o rozmiar pe³nego wiersza z paddingiem)
+
+    lea r12, [rcx + r11]     ; r12 = wskaŸnik do wiersza w dilatedImageData
+    lea r13, [r9 + r11]      ; r13 = wskaŸnik do wiersza w grayscaleImageData (gdzie zapiszemy wynik)
+
+    ; Inicjalizacja pêtli wewnêtrznej dla pikseli w danym wierszu
+    xor r14, r14             ; r14 = 0 (licznik kolumn)
+
+loop_cols:
+    cmp r14, rdx             ; Czy r14 (licznik kolumn) >= width?
+    jge end_row              ; Jeœli tak, koñczymy pêtlê wiersza
+
+    ; Obliczanie wskaŸnika do bie¿¹cego piksela
+    mov r15, r14             ; r15 = r14 (licznik kolumn)
+    imul r15, 4              ; r15 = r15 * 4 (rozmiar piksela)
+
+    lea rsi, [r12 + r15]     ; rsi = wskaŸnik do bie¿¹cego piksela w dilatedImageData
+    lea rdi, [r13 + r15]     ; rdi = wskaŸnik do bie¿¹cego piksela w grayscaleImageData (gdzie zapiszemy wynik)
+
+    ; Kana³ B
+    movzx eax, byte ptr [rsi]    ; Wczytaj kana³ B z dilatedImageData do eax
+    movzx ebx, byte ptr [rdi]    ; Wczytaj kana³ B z grayscaleImageData do ebx
+    cmp eax, ebx                 ; Porównaj wartoœci
+    jbe zero_pixel_b             ; Jeœli dilatedData <= grayscaleData, ustaw 0
+    sub eax, ebx                 ; Odejmij wartoœci
+    mov byte ptr [rdi], al       ; Zapisz wynik do kana³u B w grayscaleImageData
+    jmp next_channel_b
+
+zero_pixel_b:
+    mov byte ptr [rdi], 0        ; Zapisz 0 do kana³u B w grayscaleImageData
+
+next_channel_b:
+
+    ; Kana³ G
+    movzx eax, byte ptr [rsi+1]  ; Wczytaj kana³ G z dilatedImageData do eax
+    movzx ebx, byte ptr [rdi+1]  ; Wczytaj kana³ G z grayscaleImageData do ebx
+    cmp eax, ebx                 ; Porównaj wartoœci
+    jbe zero_pixel_g             ; Jeœli dilatedData <= grayscaleData, ustaw 0
+    sub eax, ebx                 ; Odejmij wartoœci
+    mov byte ptr [rdi+1], al     ; Zapisz wynik do kana³u G w grayscaleImageData
+    jmp next_channel_g
+
+zero_pixel_g:
+    mov byte ptr [rdi+1], 0      ; Zapisz 0 do kana³u G w grayscaleImageData
+
+next_channel_g:
+
+    ; Kana³ R
+    movzx eax, byte ptr [rsi+2]  ; Wczytaj kana³ R z dilatedImageData do eax
+    movzx ebx, byte ptr [rdi+2]  ; Wczytaj kana³ R z grayscaleImageData do ebx
+    cmp eax, ebx                 ; Porównaj wartoœci
+    jbe zero_pixel_r             ; Jeœli dilatedData <= grayscaleData, ustaw 0
+    sub eax, ebx                 ; Odejmij wartoœci
+    mov byte ptr [rdi+2], al     ; Zapisz wynik do kana³u R w grayscaleImageData
+    jmp next_channel_r
+
+zero_pixel_r:
+    mov byte ptr [rdi+2], 0      ; Zapisz 0 do kana³u R w grayscaleImageData
+
+next_channel_r:
+
+    ; Kana³ A (pozostaje bez zmian, ustawiony na 255)
+    ;mov byte ptr [rdi+3], 255    ; Kana³ A (nieprzezroczysty)
+
+    inc r14                  ; Zwiêksz licznik kolumn
+    jmp loop_cols            ; PrzejdŸ do kolejnej kolumny
+
+end_row:
+    inc r10                  ; Zwiêksz licznik wierszy
+    jmp loop_rows            ; PrzejdŸ do kolejnego wiersza
+
+end_color:
+    ret
+CombineImages ENDP
+
+
+
 
 end
