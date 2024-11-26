@@ -15,7 +15,7 @@ inline unsigned char max_value(unsigned char a, unsigned char b) {
 void ToGrayscaleSegment(const unsigned char* input, unsigned char* output, int width, int height, int startCol, int endCol) {
     for (int x = startCol; x < endCol; ++x) {
         for (int y = 0; y < height; ++y) {
-            int index = (y * width + x) * 4; // Indeks w tablicy ARGB
+            int index = (y * width + x)*4; // Indeks w tablicy ARGB
             unsigned char gray = static_cast<unsigned char>(
                 0.3 * input[index + 2] +  // R
                 0.59 * input[index + 1] + // G
@@ -71,11 +71,13 @@ extern "C" __declspec(dllexport) void __stdcall ProcessImageCpp(unsigned char* d
     threads.clear();
 
     // Dylatacja wielow¹tkowo
+    
     for (int i = 0; i < numThreads; ++i) {
         int startCol = i * colsPerThread;
         int endCol = (i == numThreads - 1) ? width : (i + 1) * colsPerThread;
         threads.emplace_back(Dilate, grayscaleData.data(), dilatedData.data(), width, height, startCol, endCol);
     }
+    
 
     for (auto& thread : threads) {
         thread.join();

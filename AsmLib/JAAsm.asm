@@ -18,7 +18,8 @@ loop_rows:
 
     ; Obliczanie wskaŸnika do pierwszego piksela w danym wierszu
     mov r11, r10             ; r11 = r10 (licznik wierszy)
-    imul r11, r9             ; r11 = r10 * stride (przesuniêcie o rozmiar pe³nego wiersza z paddingiem)
+    imul r11, rdx
+    imul r11, 4              ; r11 = r10 * stride (przesuniêcie o rozmiar pe³nego wiersza z paddingiem)
     add r11, rcx             ; r11 = rcx + r11 (wskaŸnik do pierwszego piksela w danym wierszu)
 
     ; Inicjalizacja pêtli wewnêtrznej dla pikseli w danym wierszu
@@ -34,21 +35,20 @@ loop_cols:
     add r13, r11             ; r13 = r11 + r13 (wskaŸnik do bie¿¹cego piksela)
 
     movzx eax, byte ptr [r13]        ; Wczytaj kana³ B do eax
-    imul eax, 29                     ; Przemnó¿ kana³ B przez 29
+    imul eax, 28                     ; Przemnó¿ kana³ B przez 28
     movzx ebx, byte ptr [r13+1]      ; Wczytaj kana³ G do ebx
-    imul ebx, 150                    ; Przemnó¿ kana³ G przez 150
+    imul ebx, 151                    ; Przemnó¿ kana³ G przez 151
     add eax, ebx                     ; Dodaj wynik do eax
     movzx ebx, byte ptr [r13+2]      ; Wczytaj kana³ R do ebx
     imul ebx, 77                     ; Przemnó¿ kana³ R przez 77
     add eax, ebx                     ; Dodaj wynik do eax
     shr eax, 8                       ; Podziel przez 256, aby uzyskaæ koñcowy wynik w skali szaroœci
 
-   ; Zapisz wynik w skali szaroœci do wszystkich kana³ów koloru (B, G, R) - efekt szaroœci
-    mov byte ptr [r13], al           ; Ustaw wartoœæ kana³u B na wartoœæ szaroœci
-    mov byte ptr [r13+1], al         ; Ustaw wartoœæ kana³u G na wartoœæ szaroœci
-    mov byte ptr [r13+2], al         ; Ustaw wartoœæ kana³u R na wartoœæ szaroœci
+    mov byte ptr [r13], al           ; Wpisz szaroœæ do kana³u B
+    mov byte ptr [r13+1], al         ; Wpisz szaroœæ do kana³u G
+    mov byte ptr [r13+2], al         ; Wpisz szaroœæ do kana³u R
+    mov byte ptr [r13+3], 255        ; Ustaw kana³ A jako 255 (pe³na nieprzezroczystoœæ)
 
-    mov byte ptr [r13+3], 255        ; Kana³ A (nieprzezroczysty)
 
     inc r12                  ; Zwiêksz licznik kolumn
     jmp loop_cols            ; PrzejdŸ do kolejnej kolumny
@@ -88,7 +88,7 @@ loop_cols:
     jge end_row              ; Jeœli tak, koñczymy pêtlê wiersza
 
     ; Inicjalizacja maksymalnej wartoœci dla komponentów B, G, R
-    mov rax, 0               ; rax przechowuje maksymaln¹ wartoœæ (0)
+    mov rbx, 0               ; rax przechowuje maksymaln¹ wartoœæ (0)
 
     ; Obliczanie wskaŸnika do pikseli w danej kolumnie w bie¿¹cym wierszu
     mov r13, r12             ; r13 = r12 (licznik kolumn)
@@ -109,7 +109,8 @@ loop_cols:
 
     ; LEWY PIXEL
     movzx rax, byte ptr [r15]        ; Za³aduj kana³ B lewego piksela do rax (rozszerzenie zero)
-    mov rbx, rax                     ; Skopiuj rax do rbx
+    cmp rax, rbx                     ; Porównaj z poprzednim maksimum (rx)
+    cmovg rbx, rax                     ; Skopiuj rax do rbx
     movzx rax, byte ptr [r15+1]      ; Za³aduj kana³ G lewego piksela do rax
     cmp rax, rbx                     ; Porównaj z poprzednim maksimum (rx)
     cmovg rbx, rax                   ; Jeœli rax > rbx, ustaw rbx = rax
@@ -132,7 +133,8 @@ check_right:
 
     ; PRAWY PIXEL
     movzx rax, byte ptr [r15]        ; Za³aduj kana³ B lewego piksela do rax (rozszerzenie zero)
-    mov rbx, rax                     ; Skopiuj rax do rbx
+    cmp rax, rbx                     ; Porównaj z poprzednim maksimum (rx)
+    cmovg rbx, rax                    ; Skopiuj rax do rbx
     movzx rax, byte ptr [r15+1]      ; Za³aduj kana³ G lewego piksela do rax
     cmp rax, rbx                     ; Porównaj z poprzednim maksimum (rx)
     cmovg rbx, rax                   ; Jeœli rax > rbx, ustaw rbx = rax
@@ -151,7 +153,8 @@ check_top:
 
     ; GORNY PIXEL
     movzx rax, byte ptr [r15]        ; Za³aduj kana³ B lewego piksela do rax (rozszerzenie zero)
-    mov rbx, rax                     ; Skopiuj rax do rbx
+    cmp rax, rbx                     ; Porównaj z poprzednim maksimum (rx)
+    cmovg rbx, rax                     ; Skopiuj rax do rbx
     movzx rax, byte ptr [r15+1]      ; Za³aduj kana³ G lewego piksela do rax
     cmp rax, rbx                     ; Porównaj z poprzednim maksimum (rx)
     cmovg rbx, rax                   ; Jeœli rax > rbx, ustaw rbx = rax
@@ -172,7 +175,8 @@ check_bottom:
 
     ; DOLNY PIXEL
     movzx rax, byte ptr [r15]        ; Za³aduj kana³ B lewego piksela do rax (rozszerzenie zero)
-    mov rbx, rax                     ; Skopiuj rax do rbx
+    cmp rax, rbx                     ; Porównaj z poprzednim maksimum (rx)
+    cmovg rbx, rax                     ; Skopiuj rax do rbx
     movzx rax, byte ptr [r15+1]      ; Za³aduj kana³ G lewego piksela do rax
     cmp rax, rbx                     ; Porównaj z poprzednim maksimum (rx)
     cmovg rbx, rax                   ; Jeœli rax > rbx, ustaw rbx = rax
@@ -194,7 +198,8 @@ check_left_top:
 
     ; LEWY GORNY PIXEL
     movzx rax, byte ptr [r15]        ; Za³aduj kana³ B lewego piksela do rax (rozszerzenie zero)
-    mov rbx, rax                     ; Skopiuj rax do rbx
+    cmp rax, rbx                     ; Porównaj z poprzednim maksimum (rx)
+    cmovg rbx, rax                     ; Skopiuj rax do rbx
     movzx rax, byte ptr [r15+1]      ; Za³aduj kana³ G lewego piksela do rax
     cmp rax, rbx                     ; Porównaj z poprzednim maksimum (rx)
     cmovg rbx, rax                   ; Jeœli rax > rbx, ustaw rbx = rax
@@ -219,7 +224,8 @@ check_right_top:
 
     ; PRAWY GORNY PIXEL
     movzx rax, byte ptr [r15]        ; Za³aduj kana³ B lewego piksela do rax (rozszerzenie zero)
-    mov rbx, rax                     ; Skopiuj rax do rbx
+    cmp rax, rbx                     ; Porównaj z poprzednim maksimum (rx)
+    cmovg rbx, rax                     ; Skopiuj rax do rbx
     movzx rax, byte ptr [r15+1]      ; Za³aduj kana³ G lewego piksela do rax
     cmp rax, rbx                     ; Porównaj z poprzednim maksimum (rx)
     cmovg rbx, rax                   ; Jeœli rax > rbx, ustaw rbx = rax
@@ -244,7 +250,8 @@ check_left_bottom:
 
     ; LEWY DOLNY PIXEL
     movzx rax, byte ptr [r15]        ; Za³aduj kana³ B lewego piksela do rax (rozszerzenie zero)
-    mov rbx, rax                     ; Skopiuj rax do rbx
+    cmp rax, rbx                     ; Porównaj z poprzednim maksimum (rx)
+    cmovg rbx, rax                     ; Skopiuj rax do rbx
     movzx rax, byte ptr [r15+1]      ; Za³aduj kana³ G lewego piksela do rax
     cmp rax, rbx                     ; Porównaj z poprzednim maksimum (rx)
     cmovg rbx, rax                   ; Jeœli rax > rbx, ustaw rbx = rax
@@ -271,7 +278,8 @@ check_right_bottom:
 
     ; PRAWY DOLNY PIXEL
     movzx rax, byte ptr [r15]        ; Za³aduj kana³ B lewego piksela do rax (rozszerzenie zero)
-    mov rbx, rax                     ; Skopiuj rax do rbx
+    cmp rax, rbx                     ; Porównaj z poprzednim maksimum (rx)
+    cmovg rbx, rax                     ; Skopiuj rax do rbx
     movzx rax, byte ptr [r15+1]      ; Za³aduj kana³ G lewego piksela do rax
     cmp rax, rbx                     ; Porównaj z poprzednim maksimum (rx)
     cmovg rbx, rax                   ; Jeœli rax > rbx, ustaw rbx = rax
@@ -281,6 +289,9 @@ check_right_bottom:
     mov al, bl                       ; Skopiuj wynik do rejestru al (8-bitowy)
 
 save_max_value:
+
+    sub r13, rcx
+    add r13, [rsp+40]
 
     mov byte ptr [r13], al           ; Ustaw wartoœæ kana³u B na wartoœæ szaroœci
     mov byte ptr [r13+1], al         ; Ustaw wartoœæ kana³u G na wartoœæ szaroœci

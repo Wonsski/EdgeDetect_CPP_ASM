@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace Edge_detection
@@ -11,11 +12,14 @@ namespace Edge_detection
         [DllImport(@"..\..\..\JAproj\x64\Debug\CLib.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "ProcessImageCpp")]
         public static extern void ProcessImageCpp(IntPtr bmpPtr, int width, int height, int numThreads);
 
+        [DllImport(@"..\..\..\JAproj\x64\Debug\CLib.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "ToGrayscaleSegment")]
+        public static extern void ToGrayscaleSegment(IntPtr bmpPtr, IntPtr bmpPtr2, int width, int height, int start, int end);
+
         [DllImport(@"..\..\..\JAproj\x64\Debug\AsmLib.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "ProcessImageAsm")]
         public static extern void ProcessImageAsm(IntPtr bmpPtr, int width, int height, int stride);
 
         [DllImport(@"..\..\..\JAproj\x64\Debug\AsmLib.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "DilateImageAsm")]
-        public static extern void DilateImageAsm(IntPtr bmpPtr, int width, int height, int stride);
+        public static extern void DilateImageAsm(IntPtr bmpPtr, int width, int height, int stride, IntPtr bmpPtr2);
 
         [DllImport(@"..\..\..\JAproj\x64\Debug\AsmLib.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "CombineImages")]
         public static extern void CombineImages(IntPtr bmpPtr, int width, int height, IntPtr bmpPtr2);
@@ -40,6 +44,7 @@ namespace Edge_detection
 
             Bitmap originalBitmap = new Bitmap(pictureBoxOriginal.Image);
             Bitmap originalBitmapCopy = new Bitmap(originalBitmap);  // Tworzenie kopii obrazu
+            Bitmap originalBitmapCopy2 = new Bitmap(originalBitmap);
             int numThreads = (int)numericUpDown1.Value;
 
             try
@@ -48,6 +53,7 @@ namespace Edge_detection
                 Rectangle rect = new Rectangle(0, 0, originalBitmap.Width, originalBitmap.Height);
                 BitmapData bmpData = originalBitmap.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
                 BitmapData bmpDataCopy = originalBitmapCopy.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+                BitmapData bmpDataCopy2 = originalBitmapCopy2.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
 
                 int stride = bmpData.Stride;
 
@@ -63,9 +69,9 @@ namespace Edge_detection
 
 
                     // Przetwarzanie na kopii obrazu
-                    DilateImageAsm(bmpData.Scan0, originalBitmap.Width, originalBitmap.Height, stride);
+                    DilateImageAsm(bmpData.Scan0, originalBitmap.Width, originalBitmap.Height, stride, bmpDataCopy2.Scan0);
 
-                    CombineImages(bmpDataCopy.Scan0, originalBitmap.Width, originalBitmap.Height, bmpData.Scan0);
+                    CombineImages(bmpDataCopy2.Scan0, originalBitmap.Width, originalBitmap.Height, bmpData.Scan0);
                 }
                 else
                 {
@@ -76,6 +82,7 @@ namespace Edge_detection
                 // Odblokowanie obu obrazów po przetwarzaniu
                 originalBitmap.UnlockBits(bmpData);
                 originalBitmapCopy.UnlockBits(bmpDataCopy);
+                originalBitmapCopy2.UnlockBits(bmpDataCopy2);
 
                 // Przypisanie przetworzonego obrazu do wyjściowego PictureBox
                 pictureBoxOutput.Image = originalBitmap;  // Możesz wybrać, który obraz chcesz wyświetlić, oryginalny czy kopię
