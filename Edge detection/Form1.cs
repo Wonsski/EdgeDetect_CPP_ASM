@@ -9,19 +9,19 @@ namespace Edge_detection
 {
     public partial class Form1 : Form
     {
-        [DllImport(@"..\..\..\JAproj\x64\Debug\CLib.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "ProcessImageCpp")]
+        [DllImport(@"..\..\..\JAproj\x64\Debug\CLib.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "ProcessImageCpp")]
         public static extern void ProcessImageCpp(IntPtr bmpPtr, int width, int height, int numThreads);
 
-        [DllImport(@"..\..\..\JAproj\x64\Debug\CLib.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "ToGrayscaleSegment")]
+        [DllImport(@"..\..\..\JAproj\x64\Debug\CLib.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "ToGrayscaleSegment")]
         public static extern void ToGrayscaleSegment(IntPtr bmpPtr, IntPtr bmpPtr2, int width, int height, int start, int end);
 
-        [DllImport(@"..\..\..\JAproj\x64\Debug\AsmLib.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "ProcessImageAsm")]
+        [DllImport(@"..\..\..\JAproj\x64\Debug\AsmLib.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "ProcessImageAsm")]
         public static extern void ProcessImageAsm(IntPtr bmpPtr, int width, int height, int stride);
 
-        [DllImport(@"..\..\..\JAproj\x64\Debug\AsmLib.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "DilateImageAsm")]
+        [DllImport(@"..\..\..\JAproj\x64\Debug\AsmLib.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "DilateImageAsm")]
         public static extern void DilateImageAsm(IntPtr bmpPtr, int width, int height, int stride, IntPtr bmpPtr2);
 
-        [DllImport(@"..\..\..\JAproj\x64\Debug\AsmLib.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "CombineImages")]
+        [DllImport(@"..\..\..\JAproj\x64\Debug\AsmLib.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CombineImages")]
         public static extern void CombineImages(IntPtr bmpPtr, int width, int height, IntPtr bmpPtr2);
 
         private bool useAssembly = false;
@@ -71,6 +71,7 @@ namespace Edge_detection
                     // Przetwarzanie na kopii obrazu
                     DilateImageAsm(bmpData.Scan0, originalBitmap.Width, originalBitmap.Height, stride, bmpDataCopy2.Scan0);
 
+                    //Kombinacja
                     CombineImages(bmpDataCopy2.Scan0, originalBitmap.Width, originalBitmap.Height, bmpData.Scan0);
                 }
                 else

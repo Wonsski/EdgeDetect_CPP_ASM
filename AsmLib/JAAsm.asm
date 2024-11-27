@@ -69,7 +69,11 @@ DilateImageAsm PROC
     ; r8  - height of the image (int, 32-bit)
     ; r9  - stride of the image (number of bytes per row, including padding)
 
+    ;ret
     xor r10, r10             ; r10 = 0 (licznik wierszy)
+    ;pop r10
+
+    ;ret
 
 loop_rows:
     cmp r10, r8              ; Czy r10 (licznik wierszy) >= height?
@@ -402,7 +406,6 @@ end_row:
 end_color:
     ret
 CombineImages ENDP
-
 
 
 
