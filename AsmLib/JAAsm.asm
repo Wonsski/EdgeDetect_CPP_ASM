@@ -69,11 +69,7 @@ DilateImageAsm PROC
     ; r8  - height of the image (int, 32-bit)
     ; r9  - stride of the image (number of bytes per row, including padding)
 
-    ;ret
     xor r10, r10             ; r10 = 0 (licznik wierszy)
-    ;pop r10
-
-    ;ret
 
 loop_rows:
     cmp r10, r8              ; Czy r10 (licznik wierszy) >= height?
@@ -81,7 +77,8 @@ loop_rows:
 
     ; Obliczanie wskaünika do pierwszego piksela w danym wierszu
     mov r11, r10             ; r11 = r10 (licznik wierszy)
-    imul r11, r9             ; r11 = r10 * stride (przesuniÍcie o rozmiar pe≥nego wiersza z paddingiem)
+    imul r11, rdx
+    imul r11, 4             ; r11 = r10 * stride (przesuniÍcie o rozmiar pe≥nego wiersza z paddingiem)
     add r11, rcx             ; r11 = rcx + r11 (wskaünik do pierwszego piksela w danym wierszu)
 
     ; Inicjalizacja pÍtli wewnÍtrznej dla pikseli w danym wierszu
@@ -153,7 +150,10 @@ check_top:
     je check_bottom
 
     mov r15, r13
-    sub r15, r9  ; Wskaünik do piksela powyøej
+    sub r15, rdx
+    sub r15, rdx
+    sub r15, rdx
+    sub r15, rdx    ; Wskaünik do piksela powyøej
 
     ; GORNY PIXEL
     movzx rax, byte ptr [r15]        ; Za≥aduj kana≥ B lewego piksela do rax (rozszerzenie zero)
@@ -175,7 +175,10 @@ check_bottom:
     je check_left_top
 
     mov r15, r13
-    add r15, r9  ; Wskaünik do piksela poniøej
+    add r15, rdx
+    add r15, rdx
+    add r15, rdx
+    add r15, rdx    ; Wskaünik do piksela poniøej
 
     ; DOLNY PIXEL
     movzx rax, byte ptr [r15]        ; Za≥aduj kana≥ B lewego piksela do rax (rozszerzenie zero)
@@ -197,7 +200,10 @@ check_left_top:
     je check_right_top
 
     mov r15, r13
-    sub r15, r9
+    sub r15, rdx
+    sub r15, rdx
+    sub r15, rdx
+    sub r15, rdx
     sub r15, 4   ; Wskaünik do piksela w lewym gÛrnym rogu
 
     ; LEWY GORNY PIXEL
@@ -223,7 +229,10 @@ check_right_top:
 
     ; Wskaünik do piksela w prawym gÛrnym rogu (r13 - stride + 4) - nadpisujemy r15
     mov r15, r13
-    sub r15, r9
+    sub r15, rdx
+    sub r15, rdx
+    sub r15, rdx
+    sub r15, rdx
     add r15, 4   ; Wskaünik do piksela w prawym gÛrnym rogu
 
     ; PRAWY GORNY PIXEL
@@ -249,7 +258,10 @@ check_left_bottom:
     jl check_right_bottom
 
     mov r15, r13
-    add r15, r9
+    add r15, rdx
+    add r15, rdx
+    add r15, rdx
+    add r15, rdx
     sub r15, 4   ; Wskaünik do piksela w lewym dolnym rogu
 
     ; LEWY DOLNY PIXEL
@@ -277,7 +289,10 @@ check_right_bottom:
 
     ; Wskaünik do piksela w prawym dolnym rogu (r13 + stride + 4) - nadpisujemy r15
     mov r15, r13
-    add r15, r9
+    add r15, rdx
+    add r15, rdx
+    add r15, rdx
+    add r15, rdx
     add r15, 4   ; Wskaünik do piksela w prawym dolnym rogu
 
     ; PRAWY DOLNY PIXEL

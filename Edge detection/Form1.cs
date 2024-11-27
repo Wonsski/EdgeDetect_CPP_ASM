@@ -16,7 +16,7 @@ namespace Edge_detection
         public static extern void ToGrayscaleSegment(IntPtr bmpPtr, IntPtr bmpPtr2, int width, int height, int start, int end);
 
         [DllImport(@"..\..\..\JAproj\x64\Debug\AsmLib.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "ProcessImageAsm")]
-        public static extern void ProcessImageAsm(IntPtr bmpPtr, int width, int height, int stride);
+        public static extern void ProcessImageAsm(IntPtr bmpPtr, int width, int height);
 
         [DllImport(@"..\..\..\JAproj\x64\Debug\AsmLib.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "DilateImageAsm")]
         public static extern void DilateImageAsm(IntPtr bmpPtr, int width, int height, int stride, IntPtr bmpPtr2);
@@ -55,13 +55,12 @@ namespace Edge_detection
                 BitmapData bmpDataCopy = originalBitmapCopy.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
                 BitmapData bmpDataCopy2 = originalBitmapCopy2.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
 
-                int stride = bmpData.Stride;
 
                 // Wybór funkcji w zależności od wartości useAssembly
                 if (useAssembly)
                 {
                     // Przetwarzanie na oryginalnym obrazie
-                    ProcessImageAsm(bmpData.Scan0, originalBitmap.Width, originalBitmap.Height, stride);
+                    ProcessImageAsm(bmpData.Scan0, originalBitmap.Width, originalBitmap.Height);
 
                     byte[] imageBytes = new byte[originalBitmap.Width * originalBitmap.Height * 4];
                     Marshal.Copy(bmpData.Scan0, imageBytes, 0, imageBytes.Length);
@@ -69,7 +68,7 @@ namespace Edge_detection
 
 
                     // Przetwarzanie na kopii obrazu
-                    DilateImageAsm(bmpData.Scan0, originalBitmap.Width, originalBitmap.Height, stride, bmpDataCopy2.Scan0);
+                    DilateImageAsm(bmpData.Scan0, originalBitmap.Width, originalBitmap.Height, 0, bmpDataCopy2.Scan0);
 
                     //Kombinacja
                     CombineImages(bmpDataCopy2.Scan0, originalBitmap.Width, originalBitmap.Height, bmpData.Scan0);
