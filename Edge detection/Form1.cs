@@ -9,20 +9,20 @@ namespace Edge_detection
 {
     public partial class Form1 : Form
     {
-        [DllImport(@"..\..\..\JAproj\x64\Debug\CLib.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "ProcessImageCpp")]
+        [DllImport(@"..\..\..\JAproj\x64\Release\CLib.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "ProcessImageCpp")]
         public static extern void ProcessImageCpp(IntPtr bmpPtr, int width, int height, int numThreads);
 
-        [DllImport(@"..\..\..\JAproj\x64\Debug\CLib.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "ToGrayscaleSegment")]
+        [DllImport(@"..\..\..\JAproj\x64\Release\CLib.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "ToGrayscaleSegment")]
         public static extern void ToGrayscaleSegment(IntPtr bmpPtr, IntPtr bmpPtr2, int width, int height, int start, int end);
 
-        [DllImport(@"..\..\..\JAproj\x64\Debug\AsmLib.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "ProcessImageAsm")]
-        public static extern void ProcessImageAsm(IntPtr bmpPtr, int width, int height);
+        [DllImport(@"..\..\..\JAproj\x64\Release\AsmLib.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "ProcessImageAsm")]
+        public static extern void ProcessImageAsm(IntPtr bmpPtr, int width, int height_min, int height_max);
 
-        [DllImport(@"..\..\..\JAproj\x64\Debug\AsmLib.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "DilateImageAsm")]
-        public static extern void DilateImageAsm(IntPtr bmpPtr, int width, int height, int stride, IntPtr bmpPtr2);
+        [DllImport(@"..\..\..\JAproj\x64\Release\AsmLib.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "DilateImageAsm")]
+        public static extern void DilateImageAsm(IntPtr bmpPtr, int width, int height_min, int height_max, IntPtr bmpPtr2);
 
-        [DllImport(@"..\..\..\JAproj\x64\Debug\AsmLib.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CombineImages")]
-        public static extern void CombineImages(IntPtr bmpPtr, int width, int height, IntPtr bmpPtr2);
+        [DllImport(@"..\..\..\JAproj\x64\Release\AsmLib.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CombineImages")]
+        public static extern void CombineImages(IntPtr bmpPtr, int width, int height_min, int height_max, IntPtr bmpPtr2);
 
         private bool useAssembly = false;
 
@@ -59,8 +59,10 @@ namespace Edge_detection
                 // Wybór funkcji w zależności od wartości useAssembly
                 if (useAssembly)
                 {
+                    int heightMin = 100;
+                    int heightMax = 500;
                     // Przetwarzanie na oryginalnym obrazie
-                    ProcessImageAsm(bmpData.Scan0, originalBitmap.Width, originalBitmap.Height);
+                    ProcessImageAsm(bmpData.Scan0, originalBitmap.Width, heightMin, heightMax);
 
                     byte[] imageBytes = new byte[originalBitmap.Width * originalBitmap.Height * 4];
                     Marshal.Copy(bmpData.Scan0, imageBytes, 0, imageBytes.Length);
@@ -68,10 +70,10 @@ namespace Edge_detection
 
 
                     // Przetwarzanie na kopii obrazu
-                    DilateImageAsm(bmpData.Scan0, originalBitmap.Width, originalBitmap.Height, 0, bmpDataCopy2.Scan0);
+                    DilateImageAsm(bmpData.Scan0, originalBitmap.Width, heightMin, heightMax, bmpDataCopy2.Scan0);
 
                     //Kombinacja
-                    CombineImages(bmpDataCopy2.Scan0, originalBitmap.Width, originalBitmap.Height, bmpData.Scan0);
+                    CombineImages(bmpDataCopy2.Scan0, originalBitmap.Width, heightMin, heightMax, bmpData.Scan0);
                 }
                 else
                 {

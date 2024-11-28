@@ -11,9 +11,10 @@ ProcessImageAsm PROC
     ; r9  - stride of the image (number of bytes per row, including padding)
 
     xor r10, r10             ; r10 = 0 (licznik wierszy)
+    mov r10, r8
 
 loop_rows:
-    cmp r10, r8              ; Czy r10 (licznik wierszy) >= height?
+    cmp r10, r9              ; Czy r10 (licznik wierszy) >= height?
     jge end_color            ; Jeœli tak, koñczymy pêtlê
 
     ; Obliczanie wskaŸnika do pierwszego piksela w danym wierszu
@@ -70,9 +71,10 @@ DilateImageAsm PROC
     ; r9  - stride of the image (number of bytes per row, including padding)
 
     xor r10, r10             ; r10 = 0 (licznik wierszy)
+    mov r10, r8
 
 loop_rows:
-    cmp r10, r8              ; Czy r10 (licznik wierszy) >= height?
+    cmp r10, r9              ; Czy r10 (licznik wierszy) >= height?
     jge end_color            ; Jeœli tak, koñczymy pêtlê
 
     ; Obliczanie wskaŸnika do pierwszego piksela w danym wierszu
@@ -171,7 +173,7 @@ check_bottom:
     ; Sprawdzamy doln¹ granicê (r10 + 1 >= height?)
     mov r14, r10
     inc r14
-    cmp r14, r8
+    cmp r14, r9
     je check_left_top
 
     mov r15, r13
@@ -252,7 +254,7 @@ check_left_bottom:
     ; Sprawdzamy lewy dolny róg (r10 + 1 >= height? || r12 - 1 < 0?)
     mov r14, r10
     inc r14
-    cmp r14, r8
+    cmp r14, r9
     jge check_right_bottom
     cmp r12, 0
     jl check_right_bottom
@@ -280,7 +282,7 @@ check_right_bottom:
     ; Sprawdzamy prawy dolny róg (r10 + 1 >= height? || r12 + 1 >= width?)
     mov r14, r10
     inc r14
-    cmp r14, r8
+    cmp r14, r9
     jge save_max_value
     mov r14, r12
     inc r14
@@ -339,9 +341,10 @@ CombineImages PROC
     ; R9:  grayscaleImageData (wynik operacji zostanie zapisany tutaj)
 
     xor r10, r10             ; r10 = 0 (licznik wierszy)
+    mov r10, r8
 
 loop_rows:
-    cmp r10, r8              ; Czy r10 (licznik wierszy) >= height?
+    cmp r10, r9              ; Czy r10 (licznik wierszy) >= height?
     jge end_color            ; Jeœli tak, koñczymy pêtlê
 
     ; Obliczanie wskaŸnika do pierwszego piksela w danym wierszu
@@ -350,7 +353,9 @@ loop_rows:
     imul r11, 4              ; r11 = r10 * stride (przesuniêcie o rozmiar pe³nego wiersza z paddingiem)
 
     lea r12, [rcx + r11]     ; r12 = wskaŸnik do wiersza w dilatedImageData
-    lea r13, [r9 + r11]      ; r13 = wskaŸnik do wiersza w grayscaleImageData (gdzie zapiszemy wynik)
+    mov rax, [rsp+40]   ; Za³aduj wartoœæ spod rsp+40 do tymczasowego rejestru rax
+    add rax, r11        ; Dodaj wartoœæ z r11
+    mov r13, rax        ; r13 = wskaŸnik do wiersza w grayscaleImageData (gdzie zapiszemy wynik)
 
     ; Inicjalizacja pêtli wewnêtrznej dla pikseli w danym wierszu
     xor r14, r14             ; r14 = 0 (licznik kolumn)
