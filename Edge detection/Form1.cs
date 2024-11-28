@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
@@ -11,9 +12,6 @@ namespace Edge_detection
     {
         [DllImport(@"..\..\..\JAproj\x64\Release\CLib.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "ProcessImageCpp")]
         public static extern void ProcessImageCpp(IntPtr bmpPtr, int width, int height, int numThreads);
-
-        [DllImport(@"..\..\..\JAproj\x64\Release\CLib.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "ToGrayscaleSegment")]
-        public static extern void ToGrayscaleSegment(IntPtr bmpPtr, IntPtr bmpPtr2, int width, int height, int start, int end);
 
         [DllImport(@"..\..\..\JAproj\x64\Release\AsmLib.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "ProcessImageAsm")]
         public static extern void ProcessImageAsm(IntPtr bmpPtr, int width, int height_min, int height_max);
@@ -42,59 +40,102 @@ namespace Edge_detection
                 return;
             }
 
+            // Start mierzenia czasu
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             Bitmap originalBitmap = new Bitmap(pictureBoxOriginal.Image);
-            Bitmap originalBitmapCopy = new Bitmap(originalBitmap);  // Tworzenie kopii obrazu
+            Bitmap originalBitmapCopy = new Bitmap(originalBitmap);
             Bitmap originalBitmapCopy2 = new Bitmap(originalBitmap);
             int numThreads = (int)numericUpDown1.Value;
 
             try
             {
-                // Blokowanie oryginalnego obrazu
                 Rectangle rect = new Rectangle(0, 0, originalBitmap.Width, originalBitmap.Height);
                 BitmapData bmpData = originalBitmap.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
                 BitmapData bmpDataCopy = originalBitmapCopy.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
                 BitmapData bmpDataCopy2 = originalBitmapCopy2.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
 
-
-                // Wybór funkcji w zależności od wartości useAssembly
                 if (useAssembly)
                 {
-                    int heightMin = 100;
-                    int heightMax = 500;
-                    // Przetwarzanie na oryginalnym obrazie
-                    ProcessImageAsm(bmpData.Scan0, originalBitmap.Width, heightMin, heightMax);
+                    int height = originalBitmap.Height;
+                    int width = originalBitmap.Width;
+                    int segmentHeight = height / numThreads;
 
-                    byte[] imageBytes = new byte[originalBitmap.Width * originalBitmap.Height * 4];
+                    // Proces wielowątkowy dla ProcessImageAsm
+                    Thread[] processThreads = new Thread[numThreads];
+                    for (int i = 0; i < numThreads; i++)
+                    {
+                        int yMin = i * segmentHeight;
+                        int yMax = (i == numThreads - 1) ? height : yMin + segmentHeight;
+
+                        processThreads[i] = new Thread(() =>
+                        {
+                            ProcessImageAsm(bmpData.Scan0, width, yMin, yMax);
+                        });
+                        processThreads[i].Start();
+                    }
+
+                    foreach (var thread in processThreads) thread.Join();
+
+                    byte[] imageBytes = new byte[width * height * 4];
                     Marshal.Copy(bmpData.Scan0, imageBytes, 0, imageBytes.Length);
                     Marshal.Copy(imageBytes, 0, bmpDataCopy.Scan0, imageBytes.Length);
 
+                    // Proces wielowątkowy dla DilateImageAsm
+                    Thread[] dilateThreads = new Thread[numThreads];
+                    for (int i = 0; i < numThreads; i++)
+                    {
+                        int yMin = i * segmentHeight;
+                        int yMax = (i == numThreads - 1) ? height : yMin + segmentHeight;
 
-                    // Przetwarzanie na kopii obrazu
-                    DilateImageAsm(bmpData.Scan0, originalBitmap.Width, heightMin, heightMax, bmpDataCopy2.Scan0);
+                        dilateThreads[i] = new Thread(() =>
+                        {
+                            DilateImageAsm(bmpData.Scan0, width, yMin, yMax, bmpDataCopy2.Scan0);
+                        });
+                        dilateThreads[i].Start();
+                    }
 
-                    //Kombinacja
-                    CombineImages(bmpDataCopy2.Scan0, originalBitmap.Width, heightMin, heightMax, bmpData.Scan0);
+                    foreach (var thread in dilateThreads) thread.Join();
+
+                    // Proces wielowątkowy dla CombineImages
+                    Thread[] combineThreads = new Thread[numThreads];
+                    for (int i = 0; i < numThreads; i++)
+                    {
+                        int yMin = i * segmentHeight;
+                        int yMax = (i == numThreads - 1) ? height : yMin + segmentHeight;
+
+                        combineThreads[i] = new Thread(() =>
+                        {
+                            CombineImages(bmpDataCopy2.Scan0, width, yMin, yMax, bmpData.Scan0);
+                        });
+                        combineThreads[i].Start();
+                    }
+
+                    foreach (var thread in combineThreads) thread.Join();
                 }
                 else
                 {
-                    // Przetwarzanie na oryginalnym obrazie
                     ProcessImageCpp(bmpData.Scan0, originalBitmap.Width, originalBitmap.Height, numThreads);
                 }
 
-                // Odblokowanie obu obrazów po przetwarzaniu
                 originalBitmap.UnlockBits(bmpData);
                 originalBitmapCopy.UnlockBits(bmpDataCopy);
                 originalBitmapCopy2.UnlockBits(bmpDataCopy2);
 
-                // Przypisanie przetworzonego obrazu do wyjściowego PictureBox
-                pictureBoxOutput.Image = originalBitmap;  // Możesz wybrać, który obraz chcesz wyświetlić, oryginalny czy kopię
+                pictureBoxOutput.Image = originalBitmap;
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Błąd: {ex.Message}", "Błąd", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+            finally
+            {
+                // Stop mierzenia czasu
+                stopwatch.Stop();
+                MessageBox.Show($"Czas wykonania operacji: {stopwatch.ElapsedMilliseconds} ms", "Czas wykonania", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
         }
-
 
 
         private void load_Click(object sender, EventArgs e)
@@ -112,11 +153,5 @@ namespace Edge_detection
         {
             useAssembly = checkBox1.Checked;
         }
-
-        private void numericUpDown1_ValueChanged(object sender, EventArgs e)
-        {
-            // Możesz dodać dodatkowe działanie, jeśli jest to potrzebne
-        }
-
     }
 }
